@@ -1,0 +1,2 @@
+This implementation achieves parallelizaiton by by splitting the remote content into N equal sized chunks. All chunks
+will be partitioned into Ranged-GET requests and will be pullled in parallel at the same time.
