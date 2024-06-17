@@ -51,7 +51,7 @@ func (r *RequestManager) Start() error {
 	fragmentSize := int(totalSize / Parallelization)
 	for i := 0; i < Parallelization; i++ {
 		startPos := i * fragmentSize
-		endPos := min(startPos+fragmentSize, int(totalSize))
+		endPos := min(startPos+fragmentSize, int(totalSize)) - 1
 
 		fragment := &HttpFragment{
 			srcUrl:   r.srcUrl,

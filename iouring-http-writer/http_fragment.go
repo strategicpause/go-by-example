@@ -62,7 +62,7 @@ func (h *HttpFragment) Start(httpClient *http.Client, file *os.File, iour *iouri
 		}
 		pos += uint64(written)
 		buffer.Reset()
-		if err == io.EOF || int(pos) == h.endPos {
+		if err == io.EOF || int(pos) >= h.endPos {
 			break
 		}
 	}
