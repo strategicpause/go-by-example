@@ -52,13 +52,12 @@ func (r *RequestManager) Start() error {
 	Println("Num Fragments:", numFragments)
 	for i := 0; i < numFragments; i++ {
 		startPos := i * MaxFragmentSize
-		endPos := min(startPos+MaxFragmentSize, int(totalSize))
+		endPos := min(startPos+MaxFragmentSize, int(totalSize)) - 1
 
 		fragment := &HttpFragment{
-			srcUrl:    r.srcUrl,
-			startPos:  startPos,
-			endPos:    endPos,
-			semaphore: r.semaphore,
+			srcUrl:   r.srcUrl,
+			startPos: startPos,
+			endPos:   endPos,
 		}
 
 		if i == 0 {
@@ -97,19 +96,23 @@ func IsSuccessResp(resp *http.Response) bool {
 
 func (r *RequestManager) processFragment(fragment *HttpFragment) {
 	defer r.wg.Done()
-	buffer := fragment.Start(r.httpClient, r.destFile)
+	buffer := fragment.Start(r.httpClient)
 
 	// Write the body to the file. Need a mutex first. Alternatively we can use channels for this purpose.
+
+	r.writeMutex.Lock()
+	defer r.writeMutex.Unlock()
 	Println("Seeking", fragment.startPos, " to ", fragment.endPos)
 	_, err := r.destFile.Seek(int64(fragment.startPos), io.SeekStart)
 	if err != nil {
 		Panic(err)
 	}
-	Println("Writing", fragment.startPos, " to ", fragment.endPos)
+	Println("Writing", buffer.Len(), "bytes", fragment.startPos, " to ", fragment.endPos)
 
-	_, err = io.Copy(r.destFile, buffer)
+	written, err := io.Copy(r.destFile, buffer)
 	if err != nil {
 		Panic(err)
 	}
-	Println("Finished writing", fragment.startPos, " to ", fragment.endPos)
+	Println("Finished writing", written, "bytes for", fragment.startPos, " to ", fragment.endPos)
+	<-r.semaphore
 }

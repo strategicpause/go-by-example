@@ -6,18 +6,16 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 )
 
 type HttpFragment struct {
-	srcUrl    *url.URL
-	startPos  int
-	endPos    int
-	resp      *http.Response
-	semaphore chan struct{}
+	srcUrl   *url.URL
+	startPos int
+	endPos   int
+	resp     *http.Response
 }
 
-func (h *HttpFragment) Start(httpClient *http.Client, file *os.File) *bytes.Buffer {
+func (h *HttpFragment) Start(httpClient *http.Client) *bytes.Buffer {
 	Println("Starting Fragment", h.startPos, " to ", h.endPos)
 	// Check to see if we have response already
 	if h.resp == nil {
@@ -43,14 +41,15 @@ func (h *HttpFragment) Start(httpClient *http.Client, file *os.File) *bytes.Buff
 	// Write contents to a buffer first
 	Println("Allocating buffer", h.startPos, " to ", h.endPos)
 	size := h.GetSize()
-	buffer := bytes.NewBuffer(make([]byte, size))
+	buffer := &bytes.Buffer{}
 	Println("Writing to buffer", h.startPos, " to ", h.endPos)
-	_, err := io.Copy(buffer, h.resp.Body)
+	written, err := io.CopyN(buffer, h.resp.Body, int64(size))
+	Println("Wrote", written, "bytes for", h.startPos, " to ", h.endPos)
 	if err != nil {
 		Panic(err)
 	}
 	Println("Finished writing to buffer", h.startPos, " to ", h.endPos)
-	<-h.semaphore
+
 	return buffer
 }
 
