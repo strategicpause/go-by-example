@@ -46,12 +46,6 @@ func NewGranger(uri *url.URL, options ...Option) *Granger {
 		parallelization: defaultParallelization,
 	}
 
-	if uri.Scheme == "https" {
-		g.httpClient.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{},
-		}
-	}
-
 	for _, opt := range options {
 		opt(g)
 	}
@@ -59,10 +53,26 @@ func NewGranger(uri *url.URL, options ...Option) *Granger {
 	ojp := NewOrderedJobProcessor(g.parallelization)
 	g.ojp = ojp
 
+	if uri.Scheme == "https" {
+		g.httpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{},
+		}
+	}
+
 	return g
 }
 
 func (r *Granger) WriteTo(w io.Writer) (int64, error) {
+	totalSize, err := r.start(w)
+	if err != nil {
+		return totalSize, err
+	}
+	r.wg.Wait()
+
+	return totalSize, nil
+}
+
+func (r *Granger) start(w io.Writer) (int64, error) {
 	initResp, err := r.initRequest()
 	if err != nil {
 		return 0, err
@@ -96,8 +106,6 @@ func (r *Granger) WriteTo(w io.Writer) (int64, error) {
 		r.wg.Add(1)
 		r.processFragment(fragment, w)
 	}
-
-	r.wg.Wait()
 
 	return totalSize, nil
 }

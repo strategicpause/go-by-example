@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime"
 )
 
 const (
@@ -30,6 +31,9 @@ func main() {
 		WithParallelization(Parallelization),
 		WithFragmentSize(FragmentSize),
 	)
+
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	if _, err := granger.WriteTo(os.Stdout); err != nil {
 		panic(err)
 	}
