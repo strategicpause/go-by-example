@@ -104,8 +104,11 @@ func (r *Granger) WriteTo(w io.Writer) (int64, error) {
 
 func (r *Granger) initRequest() (*http.Response, error) {
 	req := &http.Request{
-		Method: "GET",
-		URL:    r.srcUrl,
+		Method:     "GET",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		URL:        r.srcUrl,
 	}
 	resp, err := r.httpClient.Do(req)
 	if err != nil {

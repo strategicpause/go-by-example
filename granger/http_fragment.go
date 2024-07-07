@@ -19,8 +19,11 @@ func (h *HttpFragment) Start(httpClient *http.Client) (*bytes.Buffer, error) {
 	// Check to see if we have response already
 	if h.resp == nil {
 		req := &http.Request{
-			Method: "GET",
-			URL:    h.srcUrl,
+			Method:     "GET",
+			URL:        h.srcUrl,
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
 			Header: http.Header{
 				"Range": {
 					fmt.Sprintf("bytes=%v-%v", h.startPos, h.endPos),

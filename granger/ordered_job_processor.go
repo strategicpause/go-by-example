@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -61,14 +60,17 @@ func (o *OrderedJobProcessor) start() {
 				o.semaphore.Release()
 			}
 		case <-o.stopCh:
-			fmt.Println("finished")
 			break
 		}
 	}
 }
 
-func (o *OrderedJobProcessor) Stop() {
+func (o *OrderedJobProcessor) Wait() {
 	o.wg.Wait()
+}
+
+func (o *OrderedJobProcessor) Stop() {
+	o.Wait()
 	o.stopCh <- struct{}{}
 }
 
