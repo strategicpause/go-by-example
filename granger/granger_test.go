@@ -39,9 +39,9 @@ func BenchmarkHappyCase(b *testing.B) {
 
 	u, _ := url.Parse(server.URL)
 	buffer := &bytes.Buffer{}
+	g := NewGranger(u)
 
 	for i := 0; i < b.N; i++ {
-		g := NewGranger(u)
 		buffer.Reset()
 		_, _ = g.WriteTo(buffer)
 	}

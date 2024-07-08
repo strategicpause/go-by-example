@@ -47,10 +47,10 @@ func (o *OrderedJobProcessor) start() {
 		case <-o.callbackCh:
 			for i := o.currentExec; i < o.maxExec.Load(); i++ {
 				// We're still waiting on the next job to finish.
-				if _, ok := o.completedExecs.Load(i); !ok {
+				cb, ok := o.completedExecs.LoadAndDelete(i)
+				if !ok {
 					break
 				}
-				cb, _ := o.completedExecs.Swap(i, nil)
 				err := cb.(func() error)()
 				if err != nil {
 					panic(err)

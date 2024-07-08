@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"sync"
 )
 
 const (
@@ -18,7 +17,6 @@ const (
 type Granger struct {
 	httpClient      *http.Client
 	srcUrl          *url.URL
-	wg              sync.WaitGroup
 	ojp             *OrderedJobProcessor
 	fragmentSize    int
 	parallelization int
@@ -42,7 +40,6 @@ func NewGranger(uri *url.URL, options ...Option) *Granger {
 	g := &Granger{
 		httpClient:      http.DefaultClient,
 		srcUrl:          uri,
-		wg:              sync.WaitGroup{},
 		parallelization: defaultParallelization,
 	}
 
@@ -50,8 +47,7 @@ func NewGranger(uri *url.URL, options ...Option) *Granger {
 		opt(g)
 	}
 
-	ojp := NewOrderedJobProcessor(g.parallelization)
-	g.ojp = ojp
+	g.ojp = NewOrderedJobProcessor(g.parallelization)
 
 	if uri.Scheme == "https" {
 		g.httpClient.Transport = &http.Transport{
@@ -63,16 +59,6 @@ func NewGranger(uri *url.URL, options ...Option) *Granger {
 }
 
 func (r *Granger) WriteTo(w io.Writer) (int64, error) {
-	totalSize, err := r.start(w)
-	if err != nil {
-		return totalSize, err
-	}
-	r.wg.Wait()
-
-	return totalSize, nil
-}
-
-func (r *Granger) start(w io.Writer) (int64, error) {
 	initResp, err := r.initRequest()
 	if err != nil {
 		return 0, err
@@ -102,11 +88,10 @@ func (r *Granger) start(w io.Writer) (int64, error) {
 		if i == 0 {
 			fragment.resp = initResp
 		}
-
-		r.wg.Add(1)
 		r.processFragment(fragment, w)
 	}
 
+	r.ojp.Wait()
 	return totalSize, nil
 }
 
@@ -145,7 +130,6 @@ func (r *Granger) processFragment(fragment *HttpFragment, w io.Writer) {
 	}
 
 	cb := func() error {
-		defer r.wg.Done()
 		_, err := io.Copy(w, buff)
 		return err
 	}
