@@ -1,0 +1,1 @@
+This adapts the containerd [getting started example](https://github.com/containerd/containerd/blob/main/docs/getting-started.md#implementing-your-own-containerd-client) to instead pull container images using the new transfer service.
